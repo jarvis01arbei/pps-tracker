@@ -1,0 +1,97 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ระบบติดตามพัสดุ - PPS Plus</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f4f4f4;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    textarea {
+      width: 100%;
+      height: 80px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      resize: none;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+    }
+    .results {
+      margin-top: 20px;
+    }
+    .parcel {
+      padding: 10px;
+      background: #e9ecef;
+      margin-bottom: 10px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Apple_logo_black.svg/512px-Apple_logo_black.svg.png" alt="โลโก้บริษัท" width="80" style="display:block;margin:0 auto 20px;">
+    <h1>ตรวจสอบพัสดุ</h1>
+    <textarea id="trackingInput" placeholder="กรอกเลขพัสดุ เช่น TH1234567890, TH2222333344"></textarea>
+    <button onclick="checkParcels()">เช็คพัสดุ</button>
+    <div class="results" id="results"></div>
+  </div>
+
+  <script>
+    async function checkParcels() {
+      const input = document.getElementById('trackingInput').value.trim();
+      const numbers = input.split(',').map(n => n.trim()).filter(n => n !== '');
+      const resultDiv = document.getElementById('results');
+      resultDiv.innerHTML = '';
+
+      for (let number of numbers) {
+        const url = "https://api.airtable.com/v0/appdL0rlYWQHwUq26/Deliveries?filterByFormula=" + encodeURIComponent(`{Tracking Number}='${number}'`);
+        const response = await fetch(url, {
+          headers: {
+            Authorization: "Bearer patN0Pwfpjw0JxEyN.9f8532a2f2f796d0d981e3fabf0bf5f44522ae5774458ca6ddcac396eed6fd49"
+          }
+        });
+        const data = await response.json();
+        if (data.records.length > 0) {
+          const record = data.records[0].fields;
+          resultDiv.innerHTML += `
+            <div class="parcel">
+              <strong>${record['Tracking Number']}</strong><br/>
+              สถานะ: <b>${record['Delivery Status']}</b><br/>
+              ลูกค้า: ${record['Customer Name']}<br/>
+              พนักงานจัดส่ง: ${record['Delivery Staff'] || 'ไม่ระบุ'}<br/>
+              วันที่ส่ง: ${record['Delivery Date'] || 'ไม่มีข้อมูล'}
+            </div>`;
+        } else {
+          resultDiv.innerHTML += `<div class="parcel"><strong>${number}</strong> ❌ ไม่พบข้อมูล</div>`;
+        }
+      }
+    }
+  </script>
+</body>
+</html>
